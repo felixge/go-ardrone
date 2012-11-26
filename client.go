@@ -1,10 +1,10 @@
 package ardrone
 
-import(
-	/*"errors"*/
+import (
+/*"errors"*/
 )
 
-type Client struct{
+type Client struct {
 	/*Control Control*/
 }
 

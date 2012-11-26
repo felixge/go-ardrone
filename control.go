@@ -4,11 +4,11 @@ import (
 	"fmt"
 )
 
-type controlCommand interface{
+type controlCommand interface {
 	String() string
 }
 
-type ControlMessage struct{
+type ControlMessage struct {
 	commands []controlCommand
 }
 

@@ -1,11 +1,11 @@
 package commands
 
-type Sequence struct{
-	number int
+type Sequence struct {
+	number   int
 	commands []command
 }
 
-type command interface{
+type command interface {
 	String(number int) string
 }
 
@@ -24,4 +24,3 @@ func (this *Sequence) ReadMessage() string {
 
 	return message
 }
-

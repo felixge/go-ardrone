@@ -1,12 +1,11 @@
 package main
 
 import (
-	"github.com/felixge/ardrone/commands"
-	"time"
 	"fmt"
+	"github.com/felixge/ardrone/commands"
 	"net"
+	"time"
 )
-
 
 func main() {
 	sequence := new(commands.Sequence)

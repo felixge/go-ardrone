@@ -4,8 +4,8 @@ import (
 	"fmt"
 )
 
-type Ref struct{
-	Fly bool
+type Ref struct {
+	Fly       bool
 	Emergency bool
 }
 
