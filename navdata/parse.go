@@ -11,8 +11,8 @@ type Data struct {
 	sequenceNumber uint32
 	state          uint32
 	visionFlag     uint32
-	Demo *options.Demo
-	Checksum *options.Checksum
+	Demo           *options.Demo
+	Checksum       *options.Checksum
 }
 
 func Parse(raw []byte) (data Data, err error) {
@@ -44,7 +44,7 @@ func parseOptions(data *Data, buf *bytes.Buffer) error {
 		binary.Read(buf, binary.LittleEndian, optionData)
 		optionBuf := bytes.NewBuffer(optionData)
 
-		switch option.Id{
+		switch option.Id {
 		case options.DEMO:
 			data.Demo = options.ParseDemo(optionBuf)
 		case options.CHECKSUM:

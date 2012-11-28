@@ -21,26 +21,26 @@ func main() {
 
 	/*conn, err := navdata.Dial()*/
 	/*if err != nil {*/
-		/*panic(err)*/
+	/*panic(err)*/
 	/*}*/
 
 	/*for {*/
-		/*data, err := conn.Read()*/
-		/*if err != nil {*/
-			/*fmt.Printf("error: %v\n", err)*/
-			/*continue*/
-		/*}*/
+	/*data, err := conn.Read()*/
+	/*if err != nil {*/
+	/*fmt.Printf("error: %v\n", err)*/
+	/*continue*/
+	/*}*/
 
-		/*fmt.Printf("%+v\n", data.Demo)*/
+	/*fmt.Printf("%+v\n", data.Demo)*/
 
-		/*sequence.Add(&commands.Ref{Emergency: true})*/
-		/*[>sequence.Add(&commands.Pcmd{})<]*/
+	/*sequence.Add(&commands.Ref{Emergency: true})*/
+	/*[>sequence.Add(&commands.Pcmd{})<]*/
 
-		/*message := sequence.ReadMessage()*/
-		/*controlConn.Write([]byte(message))*/
+	/*message := sequence.ReadMessage()*/
+	/*controlConn.Write([]byte(message))*/
 
-		/*[>fmt.Printf("%#v\n", message)<]*/
+	/*[>fmt.Printf("%#v\n", message)<]*/
 
-		/*time.Sleep(30 * time.Millisecond)*/
+	/*time.Sleep(30 * time.Millisecond)*/
 	/*}*/
 }

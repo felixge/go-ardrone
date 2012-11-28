@@ -14,10 +14,9 @@ func Dial() (client Client, err error) {
 
 	client.navdataConn = navdataConn
 
-
 	return
 }
 
-type Client struct{
+type Client struct {
 	navdataConn navdata.Conn
 }

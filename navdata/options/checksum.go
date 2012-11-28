@@ -1,11 +1,11 @@
 package options
 
-import(
+import (
 	"bytes"
 	"encoding/binary"
 )
 
-type Checksum struct{
+type Checksum struct {
 	Value uint32
 }
 

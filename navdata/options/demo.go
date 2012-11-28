@@ -1,6 +1,6 @@
 package options
 
-import(
+import (
 	"bytes"
 	"encoding/binary"
 )
