@@ -1,16 +1,23 @@
 package ardrone
 
 import (
-/*"errors"*/
+	"github.com/felixge/ardrone/navdata"
 )
 
-type Client struct {
-	/*Control Control*/
+func Dial() (client Client, err error) {
+	client = Client{}
+
+	navdataConn, err := navdata.Dial()
+	if err != nil {
+		return
+	}
+
+	client.navdataConn = navdataConn
+
+
+	return
 }
 
-func (this *Client) Connect() error {
-	return nil
-}
-
-func (this *Client) Takeoff() {
+type Client struct{
+	navdataConn navdata.Conn
 }
