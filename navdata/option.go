@@ -1,19 +1,14 @@
-package options
+package navdata
 
-import (
-	"bytes"
-)
-
-type OptionBlock struct {
-	Id     OptionId
+type OptionHeader struct {
+	Tag    OptionTag
 	Length uint16
-	Data   bytes.Buffer
 }
 
-type OptionId uint16
+type OptionTag uint16
 
 const (
-	DEMO OptionId = iota
+	DEMO OptionTag = iota
 	TIME
 	RAW_MEASURES
 	PHY_MEASURES
