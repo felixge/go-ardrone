@@ -67,8 +67,7 @@ func ExampleReader_ReadNavdata_ErrBadChecksum() {
 	// corrupt a byte
 	data[20] = data[20] + 1;
 
-	reader := NewReader(bytes.NewReader(data))
-	_, err := reader.ReadNavdata()
+	_, err := Parse(data)
 
 	fmt.Print(err.Error())
 

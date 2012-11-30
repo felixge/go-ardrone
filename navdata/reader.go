@@ -53,6 +53,15 @@ func (this ErrBadChecksum) Error() string {
 	)
 }
 
+// Parse provides a simple interface to Reader.ReadNavdata(). However, it is
+// ~100x slower for consecutive parsing then using the Reader interface
+// directly (see bench_test.go).
+func Parse(buf []byte) (navdata *Navdata, err error) {
+	reader := NewReader(bytes.NewReader(buf))
+	navdata, err = reader.ReadNavdata()
+	return
+}
+
 func NewReader(r io.Reader) *Reader {
 	return &Reader{r: newBinaryReader(r)}
 }
