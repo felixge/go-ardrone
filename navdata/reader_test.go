@@ -50,7 +50,7 @@ func ExampleReader_ReadNavdata_ErrUnknownHeaderTag() {
 	fmt.Print(err.Error())
 
 	// Output:
-	// navdata: Unknown header tag, expected: 0x55667788, got: 0x4030201
+	// navdata: unknown header tag, expected: 0x55667788, got: 0x4030201
 }
 
 func ExampleReader_ReadNavdata_ErrUnexpectedEof() {
@@ -62,11 +62,29 @@ func ExampleReader_ReadNavdata_ErrUnexpectedEof() {
 	// unexpected EOF
 }
 
+func ExampleReader_ReadNavdata_ErrBadChecksum() {
+	data := fixtureBytes()
+	// corrupt a byte
+	data[20] = data[20] + 1;
+
+	reader := NewReader(bytes.NewReader(data))
+	_, err := reader.ReadNavdata()
+
+	fmt.Print(err.Error())
+
+	// Output:
+	// navdata: bad checksum, expected: 36359, got: 36358
+}
+
 func fixture() io.Reader {
+	return bytes.NewReader(fixtureBytes())
+}
+
+func fixtureBytes() []byte {
 	data, err := ioutil.ReadFile(fixturePath)
 	if err != nil {
 		panic(err)
 	}
 
-	return bytes.NewReader(data)
+	return data
 }

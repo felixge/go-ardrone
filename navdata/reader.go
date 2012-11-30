@@ -34,7 +34,20 @@ type ErrUnknownHeaderTag struct {
 
 func (this ErrUnknownHeaderTag) Error() string {
 	return fmt.Sprintf(
-		"navdata: Unknown header tag, expected: 0x%x, got: 0x%x",
+		"navdata: unknown header tag, expected: 0x%x, got: 0x%x",
+		this.Expected,
+		this.Got,
+	)
+}
+
+type ErrBadChecksum struct {
+	Expected Checksum
+	Got      Checksum
+}
+
+func (this ErrBadChecksum) Error() string {
+	return fmt.Sprintf(
+		"navdata: bad checksum, expected: %d, got: %d",
 		this.Expected,
 		this.Got,
 	)
@@ -67,13 +80,15 @@ func (this *Reader) ReadNavdata() (navdata *Navdata, err error) {
 		return
 	}
 
-	this.readOptions(navdata)
+	err = this.readOptions(navdata)
 
-	return navdata, nil
+	return
 }
 
-func (this *Reader) readOptions(navdata *Navdata) {
+func (this *Reader) readOptions(navdata *Navdata) error {
 	for {
+		currentChecksum := this.r.Checksum
+
 		header := &OptionHeader{}
 		this.r.ReadOrPanic(header)
 
@@ -93,9 +108,16 @@ func (this *Reader) readOptions(navdata *Navdata) {
 			optionReader.ReadOrPanic(navdata.Demo)
 		case CHECKSUM:
 			optionReader.ReadOrPanic(&navdata.Checksum)
-			return
+			if (navdata.Checksum != currentChecksum) {
+				return ErrBadChecksum{
+					Expected: currentChecksum,
+					Got: navdata.Checksum,
+				}
+			}
+			return nil
 		default:
 			//fmt.Printf("Unknown Header: %+v\n", header)
 		}
 	}
+	return nil
 }

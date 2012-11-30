@@ -1,15 +1,15 @@
 package navdata
 
-import (
-	"io"
-)
-
 type Checksum uint32
 
-type checkSumReader struct {
-	r io.Reader
+func (c *Checksum) Add(buf []byte) {
+	for i := 0; i < len(buf); i++ {
+		*c += Checksum(buf[i])
+	}
 }
 
-func newChecksumReader(r io.Reader) *checkSumReader {
-	return &checkSumReader{r: r}
+func (c *Checksum) Sub(buf []byte) {
+	for i := 0; i < len(buf); i++ {
+		*c -= Checksum(buf[i])
+	}
 }
