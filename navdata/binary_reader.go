@@ -15,21 +15,16 @@ func newBinaryReader(r io.Reader) *binaryReader {
 	return &binaryReader{r: r}
 }
 
-// @TODO merge with ReadOrPanic function
-// readOrPanic is a helper function that triggers a panic when binary.Read()
+// ReadOrPanic is a helper function that triggers a panic when binary.Read()
 // returns an error (EOF, ErrUnexpectedEOF, etc.). This allows us to unwind the
 // stack in these cases without using `if err != nil` checks everywhere.
 //
 // see: ReadNavdata(), which stops the panic() from propagating to the user of
 // this library.
-func readOrPanic(r io.Reader, value interface{}) {
-	if err := binary.Read(r, binary.LittleEndian, value); err != nil {
+func (this *binaryReader) readOrPanic(value interface{}) {
+	if err := binary.Read(this, binary.LittleEndian, value); err != nil {
 		panic(err)
 	}
-}
-
-func (this *binaryReader) ReadOrPanic(value interface{}) {
-	readOrPanic(this, value)
 }
 
 func (this *binaryReader) Read(buf []byte) (n int, err error) {

@@ -79,7 +79,7 @@ func (this *Reader) ReadNavdata() (navdata *Navdata, err error) {
 
 	navdata = &Navdata{}
 
-	this.r.ReadOrPanic(&navdata.Header)
+	this.r.readOrPanic(&navdata.Header)
 
 	if navdata.Header.Tag != DefaultHeaderTag {
 		err = ErrUnknownHeaderTag{
@@ -99,7 +99,7 @@ func (this *Reader) readOptions(navdata *Navdata) error {
 		currentChecksum := this.r.Checksum
 
 		header := &OptionHeader{}
-		this.r.ReadOrPanic(header)
+		this.r.readOrPanic(header)
 
 		// All navdata options can be extended (new values AT THE END) except
 		// navdata_demo whose size must be constant across versions
@@ -108,15 +108,15 @@ func (this *Reader) readOptions(navdata *Navdata) error {
 		// For this reason we create a new bytes.Buffer for each option, which may
 		// or may not end up reading all bytes of it.
 		optionData := make([]byte, header.Length-4)
-		this.r.ReadOrPanic(optionData)
+		this.r.readOrPanic(optionData)
 		optionReader := newBinaryReader(bytes.NewReader(optionData))
 
 		switch header.Tag {
 		case DEMO:
 			navdata.Demo = new(Demo)
-			optionReader.ReadOrPanic(navdata.Demo)
+			optionReader.readOrPanic(navdata.Demo)
 		case CHECKSUM:
-			optionReader.ReadOrPanic(&navdata.Checksum)
+			optionReader.readOrPanic(&navdata.Checksum)
 			if (navdata.Checksum != currentChecksum) {
 				return ErrBadChecksum{
 					Expected: currentChecksum,
