@@ -18,7 +18,7 @@ type Navdata struct {
 
 type NavdataHeader struct {
 	Tag            HeaderTag
-	State          uint32
+	State          State
 	SequenceNumber uint32
 	VisionFlag     uint32
 }
