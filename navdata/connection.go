@@ -20,6 +20,7 @@ func (this ErrReadTimeout) Error() string {
 type Conn struct {
 	udpConn net.PacketConn
 	addr *net.UDPAddr
+	decoder *Decoder
 }
 
 func Dial(addr string) (conn *Conn, err error) {
@@ -71,7 +72,7 @@ func (this *Conn) ReadNavdata(timeout time.Duration) (navdata *Navdata, err erro
 	for {
 		select {
 		case data := <-readResult:
-			navdata, err = Parse(data)
+			navdata, err = Decode(data)
 			return
 		case <-write.C:
 			_, err = this.udpConn.WriteTo([]byte("\x01"), this.addr)

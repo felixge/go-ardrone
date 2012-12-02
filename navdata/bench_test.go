@@ -4,22 +4,22 @@ import (
 	"testing"
 )
 
-func BenchmarkDecoder_ReadNavdata(b *testing.B) {
+func BenchmarkDecoder_Decode(b *testing.B) {
 	b.StopTimer()
-	reader := NewDecoder(fixture())
+	decoder := NewDecoder(fixture())
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
-		reader.ReadNavdata()
+		decoder.Decode()
 	}
 }
 
-func BenchmarkParse(b *testing.B) {
+func BenchmarkDecode(b *testing.B) {
 	b.StopTimer()
 	buf := fixtureBytes()
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
-		Parse(buf)
+		Decode(buf)
 	}
 }
