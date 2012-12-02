@@ -4,9 +4,9 @@ import (
 	"testing"
 )
 
-func BenchmarkReader_ReadNavdata(b *testing.B) {
+func BenchmarkDecoder_ReadNavdata(b *testing.B) {
 	b.StopTimer()
-	reader := NewReader(fixture())
+	reader := NewDecoder(fixture())
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {

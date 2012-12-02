@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-type Reader struct {
+type Decoder struct {
 	r *binaryReader
 }
 
@@ -53,22 +53,22 @@ func (this ErrBadChecksum) Error() string {
 	)
 }
 
-// Parse provides a simple interface to Reader.ReadNavdata(). However, it is
-// ~100x slower for consecutive parsing then using the Reader interface
+// Parse provides a simple interface to Decoder.ReadNavdata(). However, it is
+// ~100x slower for consecutive parsing then using the Decoder interface
 // directly (see bench_test.go).
 func Parse(buf []byte) (navdata *Navdata, err error) {
-	reader := NewReader(bytes.NewReader(buf))
+	reader := NewDecoder(bytes.NewReader(buf))
 	navdata, err = reader.ReadNavdata()
 	return
 }
 
-func NewReader(r io.Reader) *Reader {
-	return &Reader{r: newBinaryReader(r)}
+func NewDecoder(r io.Reader) *Decoder {
+	return &Decoder{r: newBinaryReader(r)}
 }
 
 // ReadNavdata blocks until the next navdata packets becomes available, which
 // it then parses and returns.
-func (this *Reader) ReadNavdata() (navdata *Navdata, err error) {
+func (this *Decoder) ReadNavdata() (navdata *Navdata, err error) {
 	// readOrPanic() panics, while not expected, should not propagate to the
 	// caller, so we return them like regular errors instead.
 	defer func() {
@@ -94,7 +94,7 @@ func (this *Reader) ReadNavdata() (navdata *Navdata, err error) {
 	return
 }
 
-func (this *Reader) readOptions(navdata *Navdata) error {
+func (this *Decoder) readOptions(navdata *Navdata) error {
 	for {
 		currentChecksum := this.r.Checksum
 

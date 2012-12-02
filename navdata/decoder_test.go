@@ -12,10 +12,10 @@ import (
 )
 
 var _, filename, _, _ = runtime.Caller(0)
-var fixturePath = path.Dir(filename) + "/reader_fixture.bin"
+var fixturePath = path.Dir(filename) + "/decoder_fixture.bin"
 
-func ExampleReader_ReadNavdata_Ok() {
-	reader := NewReader(fixture())
+func ExampleDecoder_ReadNavdata_Ok() {
+	reader := NewDecoder(fixture())
 	navdata, _ := reader.ReadNavdata()
 	json, _ := json.MarshalIndent(navdata, "", "\t")
 	fmt.Print(string(json))
@@ -38,14 +38,14 @@ func ExampleReader_ReadNavdata_Ok() {
 	// }
 }
 
-func ExampleReader_ReadNavdata_ErrUnknownHeaderTag() {
+func ExampleDecoder_ReadNavdata_ErrUnknownHeaderTag() {
 	badHeader := make([]byte, 16)
 	badHeader[0] = 0x01
 	badHeader[1] = 0x02
 	badHeader[2] = 0x03
 	badHeader[3] = 0x04
 
-	reader := NewReader(bufio.NewReader(bytes.NewReader(badHeader)))
+	reader := NewDecoder(bufio.NewReader(bytes.NewReader(badHeader)))
 	_, err := reader.ReadNavdata()
 	fmt.Print(err.Error())
 
@@ -53,8 +53,8 @@ func ExampleReader_ReadNavdata_ErrUnknownHeaderTag() {
 	// navdata: unknown header tag, expected: 0x55667788, got: 0x4030201
 }
 
-func ExampleReader_ReadNavdata_ErrUnexpectedEof() {
-	reader := NewReader(bufio.NewReader(bytes.NewReader([]byte{0x00})))
+func ExampleDecoder_ReadNavdata_ErrUnexpectedEof() {
+	reader := NewDecoder(bufio.NewReader(bytes.NewReader([]byte{0x00})))
 	_, err := reader.ReadNavdata()
 	fmt.Print(err.Error())
 
@@ -62,7 +62,7 @@ func ExampleReader_ReadNavdata_ErrUnexpectedEof() {
 	// unexpected EOF
 }
 
-func ExampleReader_ReadNavdata_ErrBadChecksum() {
+func ExampleDecoder_ReadNavdata_ErrBadChecksum() {
 	data := fixtureBytes()
 	// corrupt a byte
 	data[20] = data[20] + 1;
