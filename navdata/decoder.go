@@ -77,33 +77,6 @@ func Decode(buf []byte) (navdata *Navdata, err error) {
 	return
 }
 
-func Decode2(byteReader *bytes.Reader) (navdata *Navdata, err error) {
-	// readOrPanic() panics, while not expected, should not propagate to the
-	// caller, so we return them like regular errors instead.
-	defer func() {
-		if e := recover(); e != nil {
-			err = e.(error)
-		}
-	}()
-
-	reader := newBinaryReader(byteReader)
-	navdata = &Navdata{}
-
-	reader.readOrPanic(&navdata.Header)
-
-	if navdata.Header.Tag != DefaultHeaderTag {
-		err = ErrUnknownHeaderTag{
-			Expected: DefaultHeaderTag,
-			Got:      navdata.Header.Tag,
-		}
-		return
-	}
-
-	err = readOptions(reader, navdata)
-
-	return
-}
-
 func readOptions(reader *binaryReader, navdata *Navdata) error {
 	for {
 		currentChecksum := reader.Checksum
