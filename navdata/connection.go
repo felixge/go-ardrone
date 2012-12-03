@@ -17,13 +17,25 @@ func (this ErrReadTimeout) Error() string {
 	return "navdata: read timeout after "
 }
 
+type readCall interface{}
+type readResult struct{
+	navdata *Navdata
+	err error
+}
+
 type Conn struct {
 	udpConn net.PacketConn
 	addr *net.UDPAddr
+	readTimeout time.Duration
+	readCall chan readCall
+	readResult chan readResult
 }
 
 func Dial(addr string) (conn *Conn, err error) {
-	conn = new(Conn)
+	conn = &Conn{
+		readCall: make(chan readCall),
+		readResult: make(chan readResult),
+	}
 
 	udpConn, err := net.ListenPacket("udp", ":0")
 	if err != nil {
@@ -38,14 +50,52 @@ func Dial(addr string) (conn *Conn, err error) {
 	}
 
 	conn.addr = dst
+	go conn.readFan()
 
 	return
 }
 
+func (this *Conn) SetReadTimeout(timeout time.Duration) {
+	this.readTimeout = timeout
+}
+
+func (this *Conn) readFan() {
+	for {
+		// Sleep until we have somebody calling us
+		<-this.readCall
+		numCalls := 1
+
+		// Ok, time to some work
+		navdata, err := this.readNavdata()
+		result := readResult{navdata, err}
+
+	CollectCallers:
+		for {
+			select {
+			case <-this.readCall:
+				numCalls++
+			default:
+				break CollectCallers
+			}
+		}
+
+		for i := 0; i < numCalls; i++ {
+			this.readResult <- result
+		}
+	}
+}
+
+
+func (this *Conn) ReadNavdata() (navdata *Navdata, err error) {
+	this.readCall <- nil
+	result := <-this.readResult
+	return result.navdata, result.err
+}
+
 var requestInterval = 100 * time.Millisecond
 
-func (this *Conn) ReadNavdata(timeout time.Duration) (navdata *Navdata, err error) {
-	readTimeout := time.After(timeout)
+func (this *Conn) readNavdata() (navdata *Navdata, err error) {
+	readTimeout := time.After(this.readTimeout)
 	write := time.NewTicker(requestInterval)
 
 	defer write.Stop()
@@ -79,47 +129,10 @@ func (this *Conn) ReadNavdata(timeout time.Duration) (navdata *Navdata, err erro
 				return
 			}
 		case <-readTimeout:
-			err = ErrReadTimeout(timeout)
+			err = ErrReadTimeout(this.readTimeout)
 			return
 		}
 	}
 
 	return
 }
-
-//func (this *Conn) Read() (navdata Data, err error) {
-//timeout := time.After(readTimeout)
-//write := time.NewTicker(requestInterval)
-//defer write.Stop()
-
-//read := make(chan []byte)
-
-//go (func() {
-//// The practical limit for the data length which is imposed by the
-//// underlying IPv4 protocol is 65,507 bytes (65,535 − 8 byte UDP header −
-//// 20 byte IP header).
-//// -- http://en.wikipedia.org/wiki/User_Datagram_Protocol#Packet_structure
-//buf := make([]byte, 65507)
-//n, _, _ := this.conn.ReadFrom(buf)
-//read <- buf[:n]
-//})()
-
-//for {
-//select {
-//case data := <-read:
-//navdata, err = Parse(data)
-//return
-//case <-write.C:
-//output := []byte("\x01")
-//_, err = this.conn.WriteTo(output, this.addr)
-//if err != nil {
-//return
-//}
-//case <-timeout:
-//err = ErrReadTimeout
-//return
-//}
-//}
-
-//return
-//}

@@ -29,7 +29,7 @@ func (this *Pcmd) String(number int) string {
 	}
 
 	return fmt.Sprintf(
-		"AT*CMD=%d,%d,%s,%s,%s,%s\r",
+		"AT*PCMD=%d,%d,%s,%s,%s,%s\r",
 		number,
 		flags,
 		args[0],
