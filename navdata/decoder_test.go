@@ -1,7 +1,6 @@
 package navdata
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -15,8 +14,7 @@ var _, filename, _, _ = runtime.Caller(0)
 var fixturePath = path.Dir(filename) + "/decoder_fixture.bin"
 
 func ExampleDecoder_Decode_Ok() {
-	decoder := NewDecoder(fixture())
-	navdata, _ := decoder.Decode()
+	navdata, _ := Decode(fixtureBytes())
 	json, _ := json.MarshalIndent(navdata, "", "\t")
 	fmt.Print(string(json))
 
@@ -45,8 +43,7 @@ func ExampleDecoder_Decode_ErrUnknownHeaderTag() {
 	badHeader[2] = 0x03
 	badHeader[3] = 0x04
 
-	decoder := NewDecoder(bufio.NewReader(bytes.NewReader(badHeader)))
-	_, err := decoder.Decode()
+	_, err := Decode(badHeader)
 	fmt.Print(err.Error())
 
 	// Output:
@@ -54,8 +51,7 @@ func ExampleDecoder_Decode_ErrUnknownHeaderTag() {
 }
 
 func ExampleDecoder_Decode_ErrUnexpectedEof() {
-	decoder := NewDecoder(bufio.NewReader(bytes.NewReader([]byte{0x00})))
-	_, err := decoder.Decode()
+	_, err := Decode([]byte{0x00})
 	fmt.Print(err.Error())
 
 	// Output:

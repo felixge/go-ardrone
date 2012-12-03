@@ -3,12 +3,7 @@ package navdata
 import (
 	"bytes"
 	"fmt"
-	"io"
 )
-
-type Decoder struct {
-	r *binaryReader
-}
 
 type Navdata struct {
 	Header   NavdataHeader
@@ -53,22 +48,9 @@ func (this ErrBadChecksum) Error() string {
 	)
 }
 
-// Parse provides a simple interface to Decoder.Decode(). However, it is
-// ~100x slower for consecutive parsing then using the Decoder interface
-// directly (see bench_test.go).
-func Decode(buf []byte) (navdata *Navdata, err error) {
-	reader := NewDecoder(bytes.NewReader(buf))
-	navdata, err = reader.Decode()
-	return
-}
-
-func NewDecoder(r io.Reader) *Decoder {
-	return &Decoder{r: newBinaryReader(r)}
-}
-
 // Decode blocks until the next navdata packets becomes available, which
 // it then parses and returns.
-func (this *Decoder) Decode() (navdata *Navdata, err error) {
+func Decode(buf []byte) (navdata *Navdata, err error) {
 	// readOrPanic() panics, while not expected, should not propagate to the
 	// caller, so we return them like regular errors instead.
 	defer func() {
@@ -77,9 +59,10 @@ func (this *Decoder) Decode() (navdata *Navdata, err error) {
 		}
 	}()
 
+	reader := newBinaryReader(bytes.NewReader(buf))
 	navdata = &Navdata{}
 
-	this.r.readOrPanic(&navdata.Header)
+	reader.readOrPanic(&navdata.Header)
 
 	if navdata.Header.Tag != DefaultHeaderTag {
 		err = ErrUnknownHeaderTag{
@@ -89,17 +72,44 @@ func (this *Decoder) Decode() (navdata *Navdata, err error) {
 		return
 	}
 
-	err = this.readOptions(navdata)
+	err = readOptions(reader, navdata)
 
 	return
 }
 
-func (this *Decoder) readOptions(navdata *Navdata) error {
+func Decode2(byteReader *bytes.Reader) (navdata *Navdata, err error) {
+	// readOrPanic() panics, while not expected, should not propagate to the
+	// caller, so we return them like regular errors instead.
+	defer func() {
+		if e := recover(); e != nil {
+			err = e.(error)
+		}
+	}()
+
+	reader := newBinaryReader(byteReader)
+	navdata = &Navdata{}
+
+	reader.readOrPanic(&navdata.Header)
+
+	if navdata.Header.Tag != DefaultHeaderTag {
+		err = ErrUnknownHeaderTag{
+			Expected: DefaultHeaderTag,
+			Got:      navdata.Header.Tag,
+		}
+		return
+	}
+
+	err = readOptions(reader, navdata)
+
+	return
+}
+
+func readOptions(reader *binaryReader, navdata *Navdata) error {
 	for {
-		currentChecksum := this.r.Checksum
+		currentChecksum := reader.Checksum
 
 		header := &OptionHeader{}
-		this.r.readOrPanic(header)
+		reader.readOrPanic(header)
 
 		// All navdata options can be extended (new values AT THE END) except
 		// navdata_demo whose size must be constant across versions
@@ -108,7 +118,7 @@ func (this *Decoder) readOptions(navdata *Navdata) error {
 		// For this reason we create a new bytes.Buffer for each option, which may
 		// or may not end up reading all bytes of it.
 		optionData := make([]byte, header.Length-4)
-		this.r.readOrPanic(optionData)
+		reader.readOrPanic(optionData)
 		optionReader := newBinaryReader(bytes.NewReader(optionData))
 
 		switch header.Tag {
