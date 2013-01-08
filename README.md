@@ -6,9 +6,9 @@ A Go implementation of the Parrot AR Drone protocols.
 
 Get the latest version from Github
 ```bash
-npm install git://github.com/felixge/node-ar-drone.git
-```
 go get github.com/felixge/ardrone
+```
+
 
 Simple testcode to get the drone to takeof and land:
 package main
