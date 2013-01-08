@@ -11,6 +11,7 @@ go get github.com/felixge/ardrone
 
 
 Simple testcode to get the drone to takeof and land:
+```js
 package main
 
 import (
@@ -56,7 +57,7 @@ func main() {
 
 	log.Printf("Land %s\n", time.Since(start))
 }
-
+```
 Save the code into a file and run 
 ```bash
 go build main.go
