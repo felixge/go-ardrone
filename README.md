@@ -1,6 +1,9 @@
 ardrone
 =======
 
+**Warning:** This package is quite incomplete. If something is not working, it's probably not done yet. I do plan
+to finish this up so!
+
 A Go implementation of the Parrot AR Drone protocols.
 
 
