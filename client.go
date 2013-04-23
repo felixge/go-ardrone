@@ -4,20 +4,46 @@ import (
 	"fmt"
 	"github.com/felixge/ardrone/commands"
 	"github.com/felixge/ardrone/navdata"
+	"log"
 	"net"
 	"sync"
 	"time"
 )
 
 type State struct {
-	Pitch     float64 // -1 = max back, 1 = max forward
-	Roll      float64 // -1 = max left, 1 = max right
-	Yaw       float64 // -1 = max counter clockwise, 1 = max clockwise
-	Vertical  float64 // -1 = max down, 1 = max up
-	Land      bool    // Must be true for landing
-	Emergency bool    // Used to disable / trigger emergency mode
-	Config    []KeyVal
+	Pitch     float64  // -1 = max back, 1 = max forward
+	Roll      float64  // -1 = max left, 1 = max right
+	Yaw       float64  // -1 = max counter clockwise, 1 = max clockwise
+	Vertical  float64  // -1 = max down, 1 = max up
+	Land      bool     // Must be true for landing
+	Emergency bool     // Used to disable / trigger emergency mode
+	Config    []KeyVal // Config values to send
 }
+
+type AnimationId int
+
+const (
+	PHI_M30_DEG AnimationId = iota
+	PHI_30_DEG
+	THETA_M30_DEG
+	THETA_30_DEG
+	THETA_20_DEG_YAW_200_DEG
+	THETA_20_DEG_YAWM_200_DEG
+	TURNAROUND
+	TURNAROUND_GODOWN
+	YAW_SHAKE
+	YAW_DANCE
+	PHI_DANCE
+	THETA_DANCE
+	VZ_DANCE
+	WAVE
+	PHI_THETA_MIXED
+	DOUBLE_PHI_THETA_MIXED
+	FLIP_AHEAD
+	FLIP_BEHIND
+	FLIP_LEFT
+	FLIP_RIGHT
+)
 
 type KeyVal struct {
 	Key   string
@@ -25,7 +51,7 @@ type KeyVal struct {
 }
 
 type Client struct {
-	Config      *Config
+	Config      Config
 	navdataConn *navdata.Conn
 	commands    *commands.Sequence
 	controlConn net.Conn
@@ -43,13 +69,18 @@ type Config struct {
 	NavdataTimeout time.Duration
 }
 
-func DefaultConfig() *Config {
-	return &Config{
+func DefaultConfig() Config {
+	return Config{
 		Ip:             "192.168.1.1",
 		NavdataPort:    5554,
 		AtPort:         5556,
 		NavdataTimeout: 2000 * time.Millisecond,
 	}
+}
+
+func Connect(config Config) (*Client, error){
+	client := &Client{Config: config}
+	return client, client.Connect()
 }
 
 func (client *Client) Connect() error {
@@ -77,6 +108,7 @@ func (client *Client) Connect() error {
 	go client.sendLoop()
 	go client.navdataLoop()
 
+	// disable emergency mode (if on) and request demo navdata from drone.
 	for {
 		data := <-client.Navdata
 
@@ -100,6 +132,12 @@ func (client *Client) Connect() error {
 	}
 
 	return nil
+}
+
+func (client *Client) Animate(id AnimationId, arg int) {
+	val := fmt.Sprintf("%d,%d", id, arg)
+	config := KeyVal{Key: "control:flight_anim", Value: val}
+	client.ApplyFor(300 * time.Millisecond, State{Config: []KeyVal{config}})
 }
 
 // @TODO Implement error return value
@@ -179,7 +217,8 @@ func (client *Client) navdataLoop() {
 		navdata, err := client.navdataConn.ReadNavdata()
 		// @TODO figure out a better way to handle this, maybe an error channel
 		if err != nil {
-			panic(err)
+			log.Printf("error: %s\n", err)
+			continue;
 		}
 
 		// non-blocking sent into Navdata channel

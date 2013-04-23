@@ -1,39 +1,35 @@
 package navdata
 
-// @TODO: make this work again
-
 import (
-	"time"
-//"errors"
-//"fmt"
 	"net"
+	"time"
 )
 
-type ErrReadTimeout time.Duration
+type ErrReadTimeout struct {
+	duration time.Duration
+}
 
-func (this ErrReadTimeout) Error() string {
-	// @TODO: Why does this not work?
-	//return "navdata: read timeout after " + this.String()
-	return "navdata: read timeout after "
+func (err ErrReadTimeout) Error() string {
+	return "navdata: read timeout after " + err.duration.String()
 }
 
 type readCall interface{}
-type readResult struct{
+type readResult struct {
 	navdata *Navdata
-	err error
+	err     error
 }
 
 type Conn struct {
-	udpConn net.PacketConn
-	addr *net.UDPAddr
+	udpConn     net.PacketConn
+	addr        *net.UDPAddr
 	readTimeout time.Duration
-	readCall chan readCall
-	readResult chan readResult
+	readCall    chan readCall
+	readResult  chan readResult
 }
 
 func Dial(addr string) (conn *Conn, err error) {
 	conn = &Conn{
-		readCall: make(chan readCall),
+		readCall:   make(chan readCall),
 		readResult: make(chan readResult),
 	}
 
@@ -85,7 +81,6 @@ func (this *Conn) readFan() {
 	}
 }
 
-
 func (this *Conn) ReadNavdata() (navdata *Navdata, err error) {
 	this.readCall <- nil
 	result := <-this.readResult
@@ -129,7 +124,7 @@ func (this *Conn) readNavdata() (navdata *Navdata, err error) {
 				return
 			}
 		case <-readTimeout:
-			err = ErrReadTimeout(this.readTimeout)
+			err = ErrReadTimeout{this.readTimeout}
 			return
 		}
 	}
