@@ -245,12 +245,6 @@ func (client *Client) navdataLoop() {
 	}
 }
 
-func (client *Client) Send() {
-	message := client.commands.ReadMessage()
-	//fmt.Printf("message: %#v\n", message)
-	client.controlConn.Write([]byte(message))
-}
-
 func addr(ip string, port int) string {
 	return fmt.Sprintf("%s:%d", ip, port)
 }
