@@ -10,26 +10,33 @@ go get github.com/felixge/ardrone
 ```
 
 
-Simple testcode to get the drone to takeoff, fly forward and land:
+The code below will execute a nice little sequence, but please make sure you
+have enough space when running it.
 
 ```js
 package main
 
 import (
-  "github.com/felixge/ardrone"
-  "time"
+	"github.com/felixge/ardrone"
+	"time"
 )
 
 func main() {
-  client, err := ardrone.Connect{ardrone.DefaultConfig()}
-  if (err != nil) {
-    panic(err)
-  }
+	client, err := ardrone.Connect(ardrone.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
 
-  client.Takeoff()
-  client.ApplyFor(1 * time.Second, ardrone.State{Pitch: 0.5})
-  time.Sleep(3 * time.Second)
-  client.Land()
+	client.Takeoff()
+	client.Vertical(1*time.Second, 0.5)
+	time.Sleep(3 * time.Second)
+	client.Roll(1*time.Second, 0.5)
+	time.Sleep(3 * time.Second)
+	client.Roll(1*time.Second, -0.5)
+	time.Sleep(3 * time.Second)
+	client.Animate(ardrone.FLIP_LEFT, 200)
+	time.Sleep(5 * time.Second)
+	client.Land()
 }
 ```
 Save the code into a file and run:
