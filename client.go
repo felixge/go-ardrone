@@ -31,31 +31,31 @@ func DefaultConfig() *Config {
 	}
 }
 
-func (this *Client) Connect() error {
-	navdataAddr := addr(this.Config.Ip, this.Config.NavdataPort)
+func (client *Client) Connect() error {
+	navdataAddr := addr(client.Config.Ip, client.Config.NavdataPort)
 	navdataConn, err := navdata.Dial(navdataAddr)
 	if err != nil {
 		return err
 	}
 
-	this.navdataConn = navdataConn
-	this.navdataConn.SetReadTimeout(this.Config.NavdataTimeout)
+	client.navdataConn = navdataConn
+	client.navdataConn.SetReadTimeout(client.Config.NavdataTimeout)
 
-	controlAddr := addr(this.Config.Ip, this.Config.AtPort)
+	controlAddr := addr(client.Config.Ip, client.Config.AtPort)
 	controlConn, err := net.Dial("udp", controlAddr)
 
 	if err != nil {
 		return err
 	}
 
-	this.controlConn = controlConn
-	this.commands = &commands.Sequence{}
+	client.controlConn = controlConn
+	client.commands = &commands.Sequence{}
 
 
 	ch := make(chan error)
 
-	go func() { ch <- this.RequestDemoNavdata() }()
-	go func() { ch <- this.DisableEmergency() }()
+	go func() { ch <- client.RequestDemoNavdata() }()
+	go func() { ch <- client.DisableEmergency() }()
 
 
 	for i := 0; i < 2; i++{
@@ -67,9 +67,9 @@ func (this *Client) Connect() error {
 	return nil
 }
 
-func (this *Client) RequestDemoNavdata() error{
+func (client *Client) RequestDemoNavdata() error{
 	for {
-		navdata, err := this.ReadNavdata()
+		navdata, err := client.ReadNavdata()
 		if err != nil {
 			return err
 		}
@@ -78,16 +78,16 @@ func (this *Client) RequestDemoNavdata() error{
 			return nil
 		}
 
-		this.commands.Add(commands.Config{Key: "general:navdata_demo", Value: "TRUE"})
-		this.Send()
+		client.commands.Add(commands.Config{Key: "general:navdata_demo", Value: "TRUE"})
+		client.Send()
 	}
 
 	return nil
 }
 
-func (this *Client) DisableEmergency() error {
+func (client *Client) DisableEmergency() error {
 	for {
-		data, err := this.ReadNavdata()
+		data, err := client.ReadNavdata()
 		if err != nil {
 			return err
 		}
@@ -96,20 +96,20 @@ func (this *Client) DisableEmergency() error {
 			return nil
 		}
 
-		this.commands.Add(&commands.Ref{Emergency: true})
-		this.Send()
+		client.commands.Add(&commands.Ref{Emergency: true})
+		client.Send()
 	}
 
 	return nil
 }
 
-func (this *Client) ReadNavdata() (navdata *navdata.Navdata, err error) {
-	return this.navdataConn.ReadNavdata()
+func (client *Client) ReadNavdata() (navdata *navdata.Navdata, err error) {
+	return client.navdataConn.ReadNavdata()
 }
 
-func (this *Client) Takeoff() error {
+func (client *Client) Takeoff() error {
 	for {
-		data, err := this.ReadNavdata()
+		data, err := client.ReadNavdata()
 		if err != nil {
 			return err
 		}
@@ -118,17 +118,17 @@ func (this *Client) Takeoff() error {
 			break
 		}
 
-		this.commands.Add(&commands.Ref{Fly: true})
-		this.commands.Add(&commands.Pcmd{})
-		this.Send()
+		client.commands.Add(&commands.Ref{Fly: true})
+		client.commands.Add(&commands.Pcmd{})
+		client.Send()
 	}
 
 	return nil
 }
 
-func (this *Client) Land() error {
+func (client *Client) Land() error {
 	for {
-		data, err := this.ReadNavdata()
+		data, err := client.ReadNavdata()
 		if err != nil {
 			return err
 		}
@@ -137,19 +137,19 @@ func (this *Client) Land() error {
 			break
 		}
 
-		this.commands.Add(&commands.Ref{Fly: false})
-		this.commands.Add(&commands.Pcmd{})
-		this.Send()
+		client.commands.Add(&commands.Ref{Fly: false})
+		client.commands.Add(&commands.Pcmd{})
+		client.Send()
 	}
 
 	return nil
 }
 
 
-func (this *Client) Send() {
-	message := this.commands.ReadMessage()
+func (client *Client) Send() {
+	message := client.commands.ReadMessage()
 	//fmt.Printf("message: %#v\n", message)
-	this.controlConn.Write([]byte(message))
+	client.controlConn.Write([]byte(message))
 }
 
 func addr(ip string, port int) string {
