@@ -16,20 +16,20 @@ Simple testcode to get the drone to takeoff, fly forward and land:
 package main
 
 import (
-	"github.com/felixge/ardrone"
-	"time"
+  "github.com/felixge/ardrone"
+  "time"
 )
 
 func main() {
-	client, err := ardrone.Connect{ardrone.DefaultConfig()}
+  client, err := ardrone.Connect{ardrone.DefaultConfig()}
   if (err != nil) {
     panic(err)
   }
 
-	client.Takeoff()
+  client.Takeoff()
   client.ApplyFor(1 * time.Second, ardrone.State{Pitch: 0.5})
   time.Sleep(3 * time.Second)
-	client.Land()
+  client.Land()
 }
 ```
 Save the code into a file and run:
