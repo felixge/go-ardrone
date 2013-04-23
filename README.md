@@ -10,7 +10,8 @@ go get github.com/felixge/ardrone
 ```
 
 
-Simple testcode to get the drone to takeof and land:
+Simple testcode to get the drone to takeoff, fly forward and land:
+
 ```js
 package main
 
