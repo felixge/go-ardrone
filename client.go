@@ -184,6 +184,22 @@ func (client *Client) ApplyFor(duration time.Duration, state State) {
 	client.Apply(State{})
 }
 
+func (client *Client) Vertical(duration time.Duration, speed float64) {
+	client.ApplyFor(duration, State{Vertical: speed})
+}
+
+func (client *Client) Roll(duration time.Duration, speed float64) {
+	client.ApplyFor(duration, State{Roll: speed})
+}
+
+func (client *Client) Pitch(duration time.Duration, speed float64) {
+	client.ApplyFor(duration, State{Pitch: speed})
+}
+
+func (client *Client) Yaw(duration time.Duration, speed float64) {
+	client.ApplyFor(duration, State{Yaw: speed})
+}
+
 func (client *Client) sendLoop() {
 	for {
 		client.stateLock.Lock()
