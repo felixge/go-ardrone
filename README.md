@@ -1,10 +1,8 @@
 ardrone
 =======
 
-**Warning:** This package is quite incomplete. If something is not working, it's probably not done yet. I do plan
-to finish this up so!
-
-A Go implementation of the Parrot AR Drone protocols.
+A Go implementation of the Parrot AR Drone protocols. Not complete yet, but
+the stuff that is implemented should work : ).
 
 
 Get the latest version from Github
@@ -18,57 +16,24 @@ Simple testcode to get the drone to takeof and land:
 package main
 
 import (
-  "log"
 	"github.com/felixge/ardrone"
-	/*"net"*/
 	"time"
 )
 
 func main() {
-	log.SetFlags(log.Lmicroseconds)
-	client := &ardrone.Client{Config: ardrone.DefaultConfig()}
+	client, err := ardrone.Connect{ardrone.DefaultConfig()}
+  if (err != nil) {
+    panic(err)
+  }
 
-	start := time.Now()
-
-	log.Printf("Connecting to: %+v ...\n", client)
-
-	err := client.Connect()
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	log.Printf("Ready! Took %s\n", time.Since(start))
-
-	start = time.Now()
-
-	err = client.Takeoff()
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	log.Printf("Takeoff %s\n", time.Since(start))
-
-	start = time.Now()
-
-	err = client.Land()
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	log.Printf("Land %s\n", time.Since(start))
+	client.Takeoff()
+  client.ApplyFor(1 * time.Second, ardrone.State{Pitch: 0.5})
+  time.Sleep(3 * time.Second)
+	client.Land()
 }
 ```
-Save the code into a file and run 
+Save the code into a file and run:
+
 ```bash
-go build main.go
+go run main.go
 ```
-
-Then run
-```bash
-./go
-```
-
-
