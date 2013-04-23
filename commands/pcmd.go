@@ -7,19 +7,19 @@ import (
 )
 
 type Pcmd struct {
-	LeftRight float32
-	FrontBack float32
-	UpDown    float32
-	ClockSpin float32
+	Pitch    float64
+	Roll     float64
+	Yaw      float64
+	Vertical float64
 }
 
-func (this *Pcmd) String(number int) string {
+func (pcmd *Pcmd) String(number int) string {
 	flags := 0
 	args := []string{
-		convenientFloatToString(this.LeftRight),
-		convenientFloatToString(-this.FrontBack),
-		convenientFloatToString(this.UpDown),
-		convenientFloatToString(this.ClockSpin),
+		convenientFloatToString(pcmd.Roll),
+		convenientFloatToString(-pcmd.Pitch),
+		convenientFloatToString(pcmd.Vertical),
+		convenientFloatToString(pcmd.Yaw),
 	}
 
 	for _, val := range args {
@@ -44,7 +44,7 @@ func (this *Pcmd) String(number int) string {
 //
 // a) If there was an error, "0" is returned
 // b) If -0 was passed in, "0" is returned
-func convenientFloatToString(floatVal float32) string {
+func convenientFloatToString(floatVal float64) string {
 	if floatVal == -0 {
 		floatVal = 0
 	}
@@ -58,7 +58,7 @@ func convenientFloatToString(floatVal float32) string {
 	return result
 }
 
-func floatToString(floatVal float32) (result string, err error) {
+func floatToString(floatVal float64) (result string, err error) {
 	buf := new(bytes.Buffer)
 
 	err = binary.Write(buf, binary.BigEndian, floatVal)

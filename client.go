@@ -1,32 +1,53 @@
 package ardrone
 
 import (
-	"github.com/felixge/ardrone/navdata"
-	"github.com/felixge/ardrone/commands"
 	"fmt"
+	"github.com/felixge/ardrone/commands"
+	"github.com/felixge/ardrone/navdata"
 	"net"
+	"sync"
 	"time"
 )
 
+type State struct {
+	Pitch     float64 // -1 = max back, 1 = max forward
+	Roll      float64 // -1 = max left, 1 = max right
+	Yaw       float64 // -1 = max counter clockwise, 1 = max clockwise
+	Vertical  float64 // -1 = max down, 1 = max up
+	Land      bool    // Must be true for landing
+	Emergency bool    // Used to disable / trigger emergency mode
+	Config    []KeyVal
+}
+
+type KeyVal struct {
+	Key   string
+	Value string
+}
+
 type Client struct {
-	Config *Config
+	Config      *Config
 	navdataConn *navdata.Conn
-	commands *commands.Sequence
+	commands    *commands.Sequence
 	controlConn net.Conn
+
+	stateLock sync.Mutex
+	state     State
+
+	Navdata chan *navdata.Navdata // @TODO: make read-only
 }
 
 type Config struct {
-	Ip string
-	NavdataPort int
-	AtPort int
+	Ip             string
+	NavdataPort    int
+	AtPort         int
 	NavdataTimeout time.Duration
 }
 
 func DefaultConfig() *Config {
 	return &Config{
-		Ip: "192.168.1.1",
-		NavdataPort: 5554,
-		AtPort: 5556,
+		Ip:             "192.168.1.1",
+		NavdataPort:    5554,
+		AtPort:         5556,
 		NavdataTimeout: 2000 * time.Millisecond,
 	}
 }
@@ -51,100 +72,123 @@ func (client *Client) Connect() error {
 	client.controlConn = controlConn
 	client.commands = &commands.Sequence{}
 
+	client.Navdata = make(chan *navdata.Navdata, 0)
 
-	ch := make(chan error)
+	go client.sendLoop()
+	go client.navdataLoop()
 
-	go func() { ch <- client.RequestDemoNavdata() }()
-	go func() { ch <- client.DisableEmergency() }()
-
-
-	for i := 0; i < 2; i++{
-		if err = <-ch; err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (client *Client) RequestDemoNavdata() error{
 	for {
-		navdata, err := client.ReadNavdata()
-		if err != nil {
-			return err
+		data := <-client.Navdata
+
+		state := State{Land: true}
+		// Sets emergency state if we are in an emergency (which disables it)
+		state.Emergency = data.Header.State&navdata.STATE_EMERGENCY_LANDING != 0
+
+		// Request demo navdata if we are not receiving it yet
+		if data.Demo == nil {
+			state.Config = []KeyVal{{Key: "general:navdata_demo", Value: "TRUE"}}
+		} else {
+			state.Config = []KeyVal{}
 		}
 
-		if navdata.Demo != nil {
-			return nil
-		}
+		client.Apply(state)
 
-		client.commands.Add(commands.Config{Key: "general:navdata_demo", Value: "TRUE"})
-		client.Send()
-	}
-
-	return nil
-}
-
-func (client *Client) DisableEmergency() error {
-	for {
-		data, err := client.ReadNavdata()
-		if err != nil {
-			return err
-		}
-
-		if data.Header.State & navdata.STATE_EMERGENCY_LANDING == 0 {
-			return nil
-		}
-
-		client.commands.Add(&commands.Ref{Emergency: true})
-		client.Send()
-	}
-
-	return nil
-}
-
-func (client *Client) ReadNavdata() (navdata *navdata.Navdata, err error) {
-	return client.navdataConn.ReadNavdata()
-}
-
-func (client *Client) Takeoff() error {
-	for {
-		data, err := client.ReadNavdata()
-		if err != nil {
-			return err
-		}
-
-		if data.Demo.ControlState == navdata.CONTROL_HOVERING {
+		// Once emergency is disabled and full navdata is being sent, we are done
+		if !state.Emergency && data.Demo != nil {
 			break
 		}
-
-		client.commands.Add(&commands.Ref{Fly: true})
-		client.commands.Add(&commands.Pcmd{})
-		client.Send()
 	}
 
 	return nil
 }
 
-func (client *Client) Land() error {
+// @TODO Implement error return value
+func (client *Client) Takeoff() {
 	for {
-		data, err := client.ReadNavdata()
-		if err != nil {
-			return err
+		// State's zero value will make the drone takeoff/hover
+		client.Apply(State{})
+		select {
+		case data := <-client.Navdata:
+			if data.Demo.ControlState == navdata.CONTROL_HOVERING {
+				return
+			}
 		}
-
-		if data.Demo.ControlState == navdata.CONTROL_LANDED {
-			break
-		}
-
-		client.commands.Add(&commands.Ref{Fly: false})
-		client.commands.Add(&commands.Pcmd{})
-		client.Send()
 	}
-
-	return nil
 }
 
+// @TODO Implement error return value
+func (client *Client) Land() {
+	for {
+		client.Apply(State{Land: true})
+		select {
+		case data := <-client.Navdata:
+			if data.Demo.ControlState == navdata.CONTROL_LANDED {
+				return
+			}
+		}
+	}
+}
+
+// Apply sets the desired state of the drone. Internally this is turned into
+// one or more commands that the sendLoop transmits to the drone every 30ms.
+func (client *Client) Apply(state State) {
+	client.stateLock.Lock()
+	defer client.stateLock.Unlock()
+	client.state = state
+}
+
+// Applies a given state for a certain duration, and resets the state to its
+// zero value (hover) before returning.
+func (client *Client) ApplyFor(duration time.Duration, state State) {
+	client.Apply(state)
+	time.Sleep(duration)
+	// Set zero state (causes drone to hover)
+	client.Apply(State{})
+}
+
+func (client *Client) sendLoop() {
+	for {
+		client.stateLock.Lock()
+		client.commands.Add(&commands.Ref{
+			Fly:       !client.state.Land,
+			Emergency: client.state.Emergency,
+		})
+		client.commands.Add(&commands.Pcmd{
+			Pitch:    client.state.Pitch,
+			Roll:     client.state.Roll,
+			Yaw:      client.state.Yaw,
+			Vertical: client.state.Vertical,
+		})
+		for _, config := range client.state.Config {
+			client.commands.Add(&commands.Config{Key: config.Key, Value: config.Value})
+		}
+
+		client.stateLock.Unlock()
+
+		// @TODO: This interface for creating the commands / tracking the sequence
+		// numbers is BS - need to figure out a way to make it better.
+		message := client.commands.ReadMessage()
+		// @TODO: Handle Write() errors
+		client.controlConn.Write([]byte(message))
+		time.Sleep(30 * time.Millisecond)
+	}
+}
+
+func (client *Client) navdataLoop() {
+	for {
+		navdata, err := client.navdataConn.ReadNavdata()
+		// @TODO figure out a better way to handle this, maybe an error channel
+		if err != nil {
+			panic(err)
+		}
+
+		// non-blocking sent into Navdata channel
+		select {
+		case client.Navdata <- navdata:
+		default:
+		}
+	}
+}
 
 func (client *Client) Send() {
 	message := client.commands.ReadMessage()
