@@ -27,11 +27,11 @@ type ErrUnknownHeaderTag struct {
 	Got      HeaderTag
 }
 
-func (this ErrUnknownHeaderTag) Error() string {
+func (err ErrUnknownHeaderTag) Error() string {
 	return fmt.Sprintf(
 		"navdata: unknown header tag, expected: 0x%x, got: 0x%x",
-		this.Expected,
-		this.Got,
+		err.Expected,
+		err.Got,
 	)
 }
 
@@ -40,11 +40,11 @@ type ErrBadChecksum struct {
 	Got      Checksum
 }
 
-func (this ErrBadChecksum) Error() string {
+func (err ErrBadChecksum) Error() string {
 	return fmt.Sprintf(
 		"navdata: bad checksum, expected: %d, got: %d",
-		this.Expected,
-		this.Got,
+		err.Expected,
+		err.Got,
 	)
 }
 
