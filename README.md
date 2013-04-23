@@ -1,5 +1,4 @@
-ardrone
-=======
+# ardrone
 
 A Go implementation of the Parrot AR Drone protocols. Not complete yet, but
 the stuff that is implemented should work : ).
@@ -37,3 +36,7 @@ Save the code into a file and run:
 ```bash
 go run main.go
 ```
+
+## API Documentation
+
+The API documentation can be found [here](http://godoc.org/github.com/felixge/ardrone).
