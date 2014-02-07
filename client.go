@@ -15,7 +15,7 @@ type State struct {
 	Roll      float64  // -1 = max left, 1 = max right
 	Yaw       float64  // -1 = max counter clockwise, 1 = max clockwise
 	Vertical  float64  // -1 = max down, 1 = max up
-	Land      bool     // Must be true for landing
+	Fly       bool     // Set to false for landing.
 	Emergency bool     // Used to disable / trigger emergency mode
 	Config    []KeyVal // Config values to send
 }
@@ -78,7 +78,7 @@ func DefaultConfig() Config {
 	}
 }
 
-func Connect(config Config) (*Client, error){
+func Connect(config Config) (*Client, error) {
 	client := &Client{Config: config}
 	return client, client.Connect()
 }
@@ -112,7 +112,7 @@ func (client *Client) Connect() error {
 	for {
 		data := <-client.Navdata
 
-		state := State{Land: true}
+		state := State{}
 		// Sets emergency state if we are in an emergency (which disables it)
 		state.Emergency = data.Header.State&navdata.STATE_EMERGENCY_LANDING != 0
 
@@ -137,14 +137,13 @@ func (client *Client) Connect() error {
 func (client *Client) Animate(id AnimationId, arg int) {
 	val := fmt.Sprintf("%d,%d", id, arg)
 	config := KeyVal{Key: "control:flight_anim", Value: val}
-	client.ApplyFor(300 * time.Millisecond, State{Config: []KeyVal{config}})
+	client.ApplyFor(300*time.Millisecond, State{Config: []KeyVal{config}})
 }
 
 // @TODO Implement error return value
 func (client *Client) Takeoff() {
 	for {
-		// State's zero value will make the drone takeoff/hover
-		client.Apply(State{})
+		client.Apply(State{Fly: true})
 		select {
 		case data := <-client.Navdata:
 			if data.Demo.ControlState == navdata.CONTROL_HOVERING {
@@ -157,7 +156,7 @@ func (client *Client) Takeoff() {
 // @TODO Implement error return value
 func (client *Client) Land() {
 	for {
-		client.Apply(State{Land: true})
+		client.Apply(State{Fly: false})
 		select {
 		case data := <-client.Navdata:
 			if data.Demo.ControlState == navdata.CONTROL_LANDED {
@@ -204,7 +203,7 @@ func (client *Client) sendLoop() {
 	for {
 		client.stateLock.Lock()
 		client.commands.Add(&commands.Ref{
-			Fly:       !client.state.Land,
+			Fly:       client.state.Fly,
 			Emergency: client.state.Emergency,
 		})
 		client.commands.Add(&commands.Pcmd{
@@ -234,7 +233,7 @@ func (client *Client) navdataLoop() {
 		// @TODO figure out a better way to handle this, maybe an error channel
 		if err != nil {
 			log.Printf("error: %s\n", err)
-			continue;
+			continue
 		}
 
 		// non-blocking sent into Navdata channel
