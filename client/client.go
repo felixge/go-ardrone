@@ -2,8 +2,8 @@ package ardrone
 
 import (
 	"fmt"
-	"github.com/hybridgroup/go-ardrone/client/commands"
-	"github.com/hybridgroup/go-ardrone/client/navdata"
+	"github.com/felixge/go-ardrone/client/commands"
+	"github.com/felixge/go-ardrone/client/navdata"
 	"log"
 	"net"
 	"sync"
