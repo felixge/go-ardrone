@@ -6,7 +6,7 @@ import (
 )
 
 type binaryReader struct {
-	r io.Reader
+	r        io.Reader
 	Checksum Checksum
 	io.Reader
 }
