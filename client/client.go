@@ -2,8 +2,8 @@ package ardrone
 
 import (
 	"fmt"
-	"github.com/felixge/ardrone/commands"
-	"github.com/felixge/ardrone/navdata"
+	"github.com/felixge/go-ardrone/client/commands"
+	"github.com/felixge/go-ardrone/client/navdata"
 	"log"
 	"net"
 	"sync"
@@ -141,13 +141,13 @@ func (client *Client) Animate(id AnimationId, arg int) {
 }
 
 // @TODO Implement error return value
-func (client *Client) Takeoff() {
+func (client *Client) Takeoff() bool {
 	for {
 		client.Apply(State{Fly: true})
 		select {
 		case data := <-client.Navdata:
 			if data.Demo.ControlState == navdata.CONTROL_HOVERING {
-				return
+				return true
 			}
 		}
 	}
@@ -197,6 +197,34 @@ func (client *Client) Pitch(duration time.Duration, speed float64) {
 
 func (client *Client) Yaw(duration time.Duration, speed float64) {
 	client.ApplyFor(duration, State{Yaw: speed})
+}
+
+func (client *Client) Up(speed float64) {
+	client.Apply(State{Fly: client.state.Fly, Vertical: speed})
+}
+func (client *Client) Down(speed float64) {
+	client.Apply(State{Fly: client.state.Fly, Vertical: -speed})
+}
+func (client *Client) Right(speed float64) {
+	client.Apply(State{Fly: client.state.Fly, Roll: speed})
+}
+func (client *Client) Left(speed float64) {
+	client.Apply(State{Fly: client.state.Fly, Roll: -speed})
+}
+func (client *Client) Clockwise(speed float64) {
+	client.Apply(State{Fly: client.state.Fly, Yaw: speed})
+}
+func (client *Client) Counterclockwise(speed float64) {
+	client.Apply(State{Fly: client.state.Fly, Yaw: -speed})
+}
+func (client *Client) Forward(speed float64) {
+	client.Apply(State{Fly: client.state.Fly, Pitch: speed})
+}
+func (client *Client) Backward(speed float64) {
+	client.Apply(State{Fly: client.state.Fly, Pitch: -speed})
+}
+func (client *Client) Hover() {
+	client.Apply(State{Fly: client.state.Fly})
 }
 
 func (client *Client) sendLoop() {

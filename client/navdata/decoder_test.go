@@ -61,7 +61,7 @@ func ExampleDecoder_Decode_ErrUnexpectedEof() {
 func ExampleDecoder_Decode_ErrBadChecksum() {
 	data := fixtureBytes()
 	// corrupt a byte
-	data[20] = data[20] + 1;
+	data[20] = data[20] + 1
 
 	_, err := Decode(data)
 

@@ -100,10 +100,10 @@ func readOptions(reader *binaryReader, navdata *Navdata) error {
 			optionReader.readOrPanic(navdata.Demo)
 		case CHECKSUM:
 			optionReader.readOrPanic(&navdata.Checksum)
-			if (navdata.Checksum != currentChecksum) {
+			if navdata.Checksum != currentChecksum {
 				return ErrBadChecksum{
 					Expected: currentChecksum,
-					Got: navdata.Checksum,
+					Got:      navdata.Checksum,
 				}
 			}
 			return nil

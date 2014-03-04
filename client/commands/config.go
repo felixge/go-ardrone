@@ -5,7 +5,7 @@ import (
 )
 
 type Config struct {
-	Key string
+	Key   string
 	Value string
 }
 
