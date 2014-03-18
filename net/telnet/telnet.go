@@ -46,6 +46,8 @@ func (c *Conn) discardUntil(delim string) error {
 }
 
 // discardUntil copies the output until delim, excluding the delim itself.
+// @TODO Could be made more efficient by reading/writing more than one byte
+// at a time.
 func (c *Conn) copyUntil(dst io.Writer, delim string) error {
 	buf := ""
 	for {
@@ -58,7 +60,8 @@ func (c *Conn) copyUntil(dst io.Writer, delim string) error {
 			return nil
 		}
 		if len(buf) >= len(delim) {
-			if _, err := dst.Write([]byte{buf[len(buf)-len(delim)]}); err != nil {
+			char := buf[len(buf)-len(delim)]
+			if _, err := dst.Write([]byte{char}); err != nil {
 				return err
 			}
 		}
@@ -72,5 +75,6 @@ func (c *Conn) waitPrompt() error {
 
 // Close closes the connection.
 func (c *Conn) Close() error {
+	c.Exec("exit", ioutil.Discard)
 	return c.conn.Close()
 }

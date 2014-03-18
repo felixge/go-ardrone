@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 // TestCommandConfig defines the config required for the test command.
@@ -18,12 +19,16 @@ type TestCommandConfig interface {
 
 // NewTestCommand returns a new TestCommand.
 func NewTestCommand(args []string, config TestCommandConfig) (*TestCommand, error) {
-	return &TestCommand{config: config}, nil
+	return &TestCommand{
+		config: config,
+		args:   args,
+	}, nil
 }
 
 // TestCommand cross compiles the go tests of a pkg and runs them on the drone.
 type TestCommand struct {
 	config TestCommandConfig
+	args   []string
 }
 
 // Run implements the Command interface.
@@ -52,13 +57,24 @@ func (c *TestCommand) Run() error {
 	}
 	defer ftpConn.Del(name)
 
+	if err := os.Remove(localPath); err != nil {
+		return err
+	}
+
 	telnetConn, err := c.config.DialTelnet()
 	if err != nil {
 		return err
 	}
 	defer telnetConn.Close()
 
-	cmd := fmt.Sprintf("chmod +x %s && %s", dronePath, dronePath)
+	args := ""
+	for _, arg := range c.args {
+		if strings.HasPrefix(arg, "-") {
+			arg = "-test."+arg[1:]
+		}
+		args += arg+" "
+	}
+	cmd := fmt.Sprintf("chmod +x %s && %s %s", dronePath, dronePath, args)
 	return telnetConn.Exec(cmd, os.Stdout)
 }
 
